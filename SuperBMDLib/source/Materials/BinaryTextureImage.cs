@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -9,6 +8,7 @@ using GameFormatReader.Common;
 using SuperBMDLib.Util;
 using Chadsoft.CTools.Image;
 using Newtonsoft.Json;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace SuperBMDLib.Materials
 {
@@ -287,6 +287,32 @@ namespace SuperBMDLib.Materials
             Console.WriteLine(String.Format("Format of Texture {0} set to {1}", Name, Format));
         }
 
+        public unsafe void Load(SixLabors.ImageSharp.Image<Bgra32> image)
+        {
+            Format = TextureFormats.CMPR;
+            AlphaSetting = 0;
+            WrapS = WrapModes.ClampToEdge;
+            WrapT = WrapModes.ClampToEdge;
+            PaletteFormat = PaletteFormats.IA8;
+            PaletteCount = 0;
+            EmbeddedPaletteOffset = 0;
+            MinFilter = FilterMode.Linear;
+            MagFilter = FilterMode.Linear;
+            MipMapCount = 1;
+            LodBias = 0;
+            Width = (ushort)image.Width;
+            Height = (ushort)image.Height;
+            m_rgbaImageData = new byte[Width * Height * 4];
+            if (image.TryGetSinglePixelSpan(out var span))
+            {
+                fixed (Bgra32* ptr = span)
+                {
+                    Marshal.Copy((IntPtr)ptr, m_rgbaImageData, 0, m_rgbaImageData.Length);
+                }
+            }
+            DetectAndSetFittingFormat();
+        }
+
         // We analyze the image data and check 
         public void DetectAndSetFittingFormat()
         {
@@ -359,6 +385,11 @@ namespace SuperBMDLib.Materials
             bmp.UnlockBits(bmpData);
 
             return bmp;
+        }
+
+        public SixLabors.ImageSharp.Image<Bgra32> CreateImage()
+        {
+            return SixLabors.ImageSharp.Image.LoadPixelData<Bgra32>(m_rgbaImageData, Width, Height);
         }
 
         /// <summary>
