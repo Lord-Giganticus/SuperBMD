@@ -287,7 +287,7 @@ namespace SuperBMDLib.Materials
             Console.WriteLine(String.Format("Format of Texture {0} set to {1}", Name, Format));
         }
 
-        public unsafe void Load(SixLabors.ImageSharp.Image<Bgra32> image)
+        public void Load(SixLabors.ImageSharp.Image<Bgra32> image)
         {
             Format = TextureFormats.CMPR;
             AlphaSetting = 0;
@@ -305,10 +305,7 @@ namespace SuperBMDLib.Materials
             m_rgbaImageData = new byte[Width * Height * 4];
             if (image.TryGetSinglePixelSpan(out var span))
             {
-                fixed (Bgra32* ptr = span)
-                {
-                    Marshal.Copy((IntPtr)ptr, m_rgbaImageData, 0, m_rgbaImageData.Length);
-                }
+                MemoryMarshal.Cast<Bgra32, byte>(span).CopyTo(m_rgbaImageData);
             }
             DetectAndSetFittingFormat();
         }
